@@ -1,0 +1,7 @@
+{
+  "src": [
+    "pages/Welcome",
+    "pages/Index",
+    "pages/SongListPage"
+  ]
+}

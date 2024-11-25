@@ -1,0 +1,48 @@
+{
+  "color": [
+    {
+      "name": "start_window_background",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "slider_selected_color",
+      "value": "#d5d5d5"
+    },
+    {
+      "name": "progress_unselect_color",
+      "value": "#d5d5d5"
+    },
+    {
+      "name": "bottom_player_shadow_color",
+      "value": "#f2f2f2"
+    },
+    {
+      "name": "unselect_lyric",
+      "value": "#d5d5d5"
+    },
+    {
+      "name": "grey",
+      "value": "#d5d5d5"
+    },
+    {
+      "name": "dark_grey",
+      "value": "#FF9B9B9B"
+    },
+    {
+      "name": "cover_background_color",
+      "value": "#2D000000"
+    },
+    {
+      "name": "light_grey",
+      "value": "#f4f4f4"
+    },
+    {
+      "name": "transparent_light_grey",
+      "value": "#A6F4F4F4"
+    },
+    {
+      "name": "white",
+      "value": "#ffffff"
+    }
+  ]
+}

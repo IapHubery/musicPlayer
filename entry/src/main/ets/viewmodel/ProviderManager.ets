@@ -12,7 +12,6 @@ const TAG = 'ProviderFeature';
 export default class ProviderFeature {
   private static providerSelf: ProviderFeature | undefined = undefined;
 
-
   private originPlayList: Song[] = []
   private currentPlayListLink?: SubscribedAbstractProperty<Array<Song>>
   private currentPlaySongLink?: SubscribedAbstractProperty<Song | undefined>
@@ -53,12 +52,49 @@ export default class ProviderFeature {
     this.avPlayer = this.mediaPlayer.getAvPlayer()
   }
 
-  async playOrChange(song: Song) {
-    if (this.currentPlaySongLink?.get() == undefined) {
+  /**
+   * update from playOrChange
+   * 实现自动判断 播放、暂停、切歌
+   * @param { Song } song - Song
+   * @since v-1.1
+   * */
+  async playOrPauseOrChange(song: Song) {
+    // 判断是否有 播放记录， 无则 播放歌曲 1-if
+    if (this.currentPlaySongLink?.get() === undefined) {
       this.currentPlaySongLink?.set(song)
       await this.play(song)
     } else {
-      if (!(this.currentPlaySongLink.get()?.id == song.id)) {
+      // 同一首歌
+      if ( this.currentPlaySongLink.get()?.id === song.id ) {
+        // 暂停、播放 3-if
+        if(this.avPlayer?.state === AVPlayerState.PLAYING){
+          this.pause()
+        }else{
+          await this.play(song)
+        }
+      }else {
+        // 切换歌曲  3-if
+        this.currentPlaySongLink.set(song)
+        this.isPlayingLink?.set(false)
+        await this.changeSong(song)
+      }
+    }
+  }
+
+  /**
+   * use playOrPauseOrChange Instead
+   * @param { Song } song - Song
+   * @since v-0.1
+   * @deprecated since v-1.1
+   * */
+  async playOrChange(song: Song) {
+    // 判断是否有 播放记录， 无则 播放歌曲
+    if (this.currentPlaySongLink?.get() === undefined) {
+      this.currentPlaySongLink?.set(song)
+      await this.play(song)
+    } else {
+      if ( this.currentPlaySongLink.get()?.id != song.id ) {
+        // 切换歌曲
         this.currentPlaySongLink.set(song)
         this.isPlayingLink?.set(false)
         await this.changeSong(song)
@@ -68,10 +104,10 @@ export default class ProviderFeature {
 
   async play(song: Song | undefined) {
     Logger.info(`当前播放器状态: ${this.avPlayer?.state}`)
-    if (this.avPlayer?.state == AVPlayerState.PAUSED) {
+    if (this.avPlayer?.state === AVPlayerState.PAUSED) {
       this.avPlayer?.play()
-    } else if (this.avPlayer?.state == AVPlayerState.IDLE || this.avPlayer?.state == AVPlayerState.RELEASED) {
-      if (this.avPlayer?.state == AVPlayerState.RELEASED) {
+    } else if (this.avPlayer?.state === AVPlayerState.IDLE || this.avPlayer?.state === AVPlayerState.RELEASED) {
+      if (this.avPlayer?.state === AVPlayerState.RELEASED) {
         this.avPlayer?.reset()
       }
       if (song) {
@@ -111,28 +147,28 @@ export default class ProviderFeature {
         }
         // Logger.info('' + this.wordsLink?.get())
       }
-      this.lyricListLink?.set(temp)
     }
+    // 无歌词即为空
+    this.lyricListLink?.set(temp)
   }
-
+   // 更换播放模式
   changePlayMode() {
-    if (this.playModeLink?.get() == MyPlayMode.LIST_CYCLE) {
+    if (this.playModeLink?.get() === MyPlayMode.LIST_CYCLE) {
       this.playModeLink.set(MyPlayMode.SINGLE_CYCLE)
-    } else if (this.playModeLink?.get() == MyPlayMode.SINGLE_CYCLE) {
+    } else if (this.playModeLink?.get() === MyPlayMode.SINGLE_CYCLE) {
       this.playModeLink?.set(MyPlayMode.RANDOM)
       const playList = this.currentPlayListLink?.get()
       if (playList != undefined) {
         for (let index = 0; index < playList.length; index++) {
           const song: Song = playList[index];
           const random = Math.floor(Math.random() * playList.length)
-          if (random == index) {
+          if (random === index) {
             continue
           }
           let temp: Song = playList[random]
           playList[random] = song
           playList[index] = temp
         }
-
       }
     } else {
       this.playModeLink?.set(MyPlayMode.LIST_CYCLE)
@@ -142,13 +178,14 @@ export default class ProviderFeature {
     }
   }
 
+  // 上一首
   async lastSong() {
     const currentPlayList = this.currentPlayListLink?.get()
     if (currentPlayList) {
       let songIndex = -1
       for (let index = 0;index < currentPlayList.length;index++) {
-        if (this.currentPlaySongLink?.get()?.id == currentPlayList[index].id) {
-          if (index == 0)
+        if (this.currentPlaySongLink?.get()?.id === currentPlayList[index].id) {
+          if (index === 0)
             songIndex = currentPlayList.length - 1
           else
             songIndex = index - 1
@@ -158,30 +195,32 @@ export default class ProviderFeature {
     }
   }
 
+  // 下一首
   async nextSong(isClick: boolean) {
     const currentPlayList = this.currentPlayListLink?.get()
     if (currentPlayList) {
       let songIndex = -1
       const playMode = this.playModeLink?.get()
-      if (isClick || (!isClick && (playMode == MyPlayMode.LIST_CYCLE || playMode == MyPlayMode.RANDOM))) {
+      if (isClick || (!isClick && (playMode === MyPlayMode.LIST_CYCLE || playMode === MyPlayMode.RANDOM))) {
         for (let index = 0;index < currentPlayList.length;index++) {
-          if (this.currentPlaySongLink?.get()?.id == currentPlayList[index].id) {
-            if (index == currentPlayList.length - 1)
+          if (this.currentPlaySongLink?.get()?.id === currentPlayList[index].id) {
+            if (index === currentPlayList.length - 1)
               songIndex = 0
             else
               songIndex = index + 1
           }
         }
         await this.changeSong(currentPlayList[songIndex])
-      } else if (!isClick && playMode == MyPlayMode.SINGLE_CYCLE) {
+      } else if (!isClick && playMode === MyPlayMode.SINGLE_CYCLE) {
         this.avPlayer?.seek(0)
-        if (this.avPlayer?.state == AVPlayerState.COMPLETED) {
+        if (this.avPlayer?.state === AVPlayerState.COMPLETED) {
           this.avPlayer?.play()
         }
       }
     }
   }
 
+  // 切换歌曲
   async changeSong(song: Song) {
     if (this.currentPlaySongLink?.get() != undefined) {
       await this.avPlayer?.reset()
@@ -193,13 +232,13 @@ export default class ProviderFeature {
   }
 
   seek(seek: number) {
-    if (this.currentProgressLink && (this.avPlayer?.state == AVPlayerState.PLAYING || this.avPlayer?.state == AVPlayerState.PAUSED)) {
+    if (this.currentProgressLink && (this.avPlayer?.state === AVPlayerState.PLAYING || this.avPlayer?.state === AVPlayerState.PAUSED)) {
       this.avPlayer?.seek(seek)
     }
   }
-
+  // 暂停
   pause() {
-    if (this.avPlayer?.state == AVPlayerState.PLAYING) {
+    if (this.avPlayer?.state === AVPlayerState.PLAYING) {
       this.avPlayer?.pause()
     }
   }

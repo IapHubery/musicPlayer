@@ -7,7 +7,6 @@ import { ScreenInfo } from '../common/constants/Constants'
 @Entry
 @Component
 struct Welcome {
-
   onPageShow() {
     Logger.info('Welcome!')
     // setInterval(function() {}.bind(this), 3000)
@@ -31,11 +30,8 @@ struct Welcome {
 
   build() {
     Column() {
-      Text('Hello')
-        .fontSize(24)
-        .fontWeight(FontWeight.Regular)
-      Text('new World！')
-        .fontSize(24)
+      Text('你若安好\n便是晴天')
+        .fontSize(32)
         .fontWeight(FontWeight.Regular)
     }
     .width('100%')

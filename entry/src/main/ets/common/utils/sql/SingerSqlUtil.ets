@@ -10,14 +10,15 @@ import { window } from '@kit.ArkUI'
 import Constants from '../../constants/Constants'
 
 export default class SqlUtil extends EntryAbility {
-  static querySinger(singerName: string, limit: number[]) {
+  static querySinger(singerName: string, limit?: number[]) {
     const singers: Singer[] = []
     if(rdbStore != undefined) {
       let sql = ''
+      let limitStr = limit? 'LIMIT ' + limit[0] + ', ' + limit[1] : ''
       if (singerName)
-        sql = 'SELECT * FROM singer WHERE name like \'%' + singerName + '%\' LIMIT ' + limit[0] + ', ' + limit[1]
+        sql = 'SELECT * FROM singer WHERE name like \'%' + singerName + '%\' ' + limitStr
       else
-        sql = 'SELECT * FROM singer LIMIT ' + limit[0] + ', ' + limit[1]
+        sql = 'SELECT * FROM singer ' + limitStr
       const resultSet = rdbStore.querySqlSync(sql)
       while (resultSet.goToNextRow()) {
         const id = resultSet.getString(resultSet.getColumnIndex('id'));

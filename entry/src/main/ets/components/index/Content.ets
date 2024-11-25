@@ -11,13 +11,13 @@ import Logger from '../../common/utils/Logger';
 import ProviderFeature from '../../viewmodel/ProviderManager';
 import { SongsWrap } from '../../model/SongsWrap';
 import SongList from '../../model/SongList';
-import { router } from '@kit.ArkUI';
+import { promptAction, router } from '@kit.ArkUI';
 import Router from '../../route/Router';
 import SongSqlUtil from '../../common/utils/sql/SongSqlUtil';
 import SingerSqlUtil from '../../common/utils/sql/SingerSqlUtil';
 
 let context = getContext(this) as common.Context;
-let defalutFilePathUri = 'file://docs/storage/Users/currentUser/Download'
+let defaultFilePathUri = 'file://docs/storage/Users/currentUser/Download'
 // let fileSuffixFilters = ['图片(.png, .jpg)|.png,.jpg', '文档|.txt', '视频|.mp4', '.pdf']
 // let fileSuffixFilters = ['音频(.mp3,.flac)|.mp3,.flac', '歌词|.lrc', '图片(.png,.jpg,.webp)|.png,.jpg,.webp']
 let fileSuffixFilters = ['.mp3,.flac', '.lrc', '.png,.jpg,.webp']
@@ -48,9 +48,11 @@ export default struct Content {
   private listScroller: Scroller = new Scroller()
   private listIndex: number = 0
   private lastX: number = -1
+
+
   // 本地歌曲列表是否要显示
-  // 当songListFlag为 true 时，捕捉返回逻辑， 将songListFlag改为false，而不是直接退出应用
   @Link showLocalList:boolean
+  @Link isLocalListEnter:boolean
 
   async aboutToAppear() {
     this.providerFeature = await ProviderFeature.getInstance()
@@ -59,7 +61,7 @@ export default struct Content {
 
   importFiles() {
     if (this.selectedUris.length > 0) {
-      if (this.upgradeTotal == 0)
+      if (this.upgradeTotal === 0)
         this.upgradeTotal = this.selectedUris.length
       if (this.currentUpgradeNum > 0)
         this.getData()
@@ -100,34 +102,36 @@ export default struct Content {
 
   private getData() {
     this.songs = SongSqlUtil.querySong('', [0, this.songPageSize])
+    // ForEach 展示数据 ⬇  设置showSongs为 多行一列 的二维数组，以便刷新列表。
+
     const showSongs: Song[][] = []
-    for (let i = 0; i < this.songs.length; i++) {
-      const index = Math.floor(i / 3)
+    for (let index = 0; index < this.songs.length; index++) {
       if (showSongs[index] == undefined) {
         showSongs[index] = []
       }
-      showSongs[index].push(this.songs[i])
+      showSongs[index].push(this.songs[index])
     }
     this.showSongs = showSongs
-    /*let setDefaultListFlag = false
-    if (this.currentPlayList?.length == 0) {
+    // ForEach 展示数据 ⬆
+    let setDefaultListFlag = false
+    if (this.currentPlayList?.length === 0) {
       setDefaultListFlag = true
     }
     for (let index = 0; index < this.songs.length; index++) {
-      if (index ==0) {
+      if (index ===0) {
         this.currentPlaySong = this.songs[index]
       }
       if (setDefaultListFlag) {
         this.currentPlayList?.push(this.songs[index])
       }
-    }*/
-    this.singers = SingerSqlUtil.querySinger('', [0, this.singerPageSize])
+    }
+    this.singers = SingerSqlUtil.querySinger('')
   }
 
   build() {
     Row({ space: 20 }) {
       Stack() {
-        if (this.songs.length == 0) {
+        if (this.songs.length === 0) {
           Column () {
             Image($r('app.media.ic_public_add_norm'))
               .width(32)
@@ -189,14 +193,16 @@ export default struct Content {
                   .width(32)
                   .fillColor($r('app.color.grey'))
                   .visibility(this.showLocalList? Visibility.Visible: Visibility.None) // -----
-                  // .border({ width:1, color: Color.Blue })
-                  .margin({ left: 10, top:'3%', bottom:'3%' })
+                    // .border({ width:1, color: Color.Blue })
+                  .margin({ left: 10, top:'5%', bottom:'5%' })
                   .onClick(() => {
+                    // 退出本地歌曲列表
                     this.showLocalList = false
+                    this.isLocalListEnter = false
                   })
                 Text('本地歌曲')
                   .fontSize(24)
-                  .margin({ left: this.showLocalList? 10: '5%', top:'3%', bottom:'3%' })
+                  .margin({ left: this.showLocalList? 10: '5%', top:'5%', bottom:'5%' })
               }
               .backgroundColor($r('app.color.transparent_light_grey'))
               .alignItems(VerticalAlign.Top)
@@ -205,6 +211,8 @@ export default struct Content {
               .onClick( () => {
                 // 是否展示本地歌曲列表
                 this.showLocalList = true
+                // 本地歌曲列表 打开 播放页面
+                this.isLocalListEnter = true
               })
 
               // 歌曲列表显示
@@ -234,7 +242,7 @@ export default struct Content {
                             Image(song.isFavor == 0 ? $r('app.media.ic_public_favor') : $r('app.media.ic_public_favor_filled'))
                               .width(18)
                               .fillColor(song.isFavor == 0 ? Color.Black : Color.Red)
-                              .margin({ right: i == this.showSongs.length - 1 ? '10%' : 0})
+                              .margin({ bottom: 10 , right: '10%' })
                               .onClick(() => {
                                 if (song.isFavor == 0) {
                                   song.isFavor = 1
@@ -249,11 +257,10 @@ export default struct Content {
                                 }
                                 const result: number = SqlUtil.update('song', 'id', song.id, song.toValuesBucket())
                                 if (result > 0) {
-                                  const songs: Song[] = []
-                                  for (let index = 0; index < this.showSongs[i].length; index++) {
-                                    songs.push(this.showSongs[i][index])
-                                  }
-                                  this.showSongs[i] = songs
+                                  let newSongs: Song[] = []
+                                  newSongs.push(this.showSongs[i][0]) // index
+                                  this.showSongs[i] = newSongs
+                                  // promptAction.showToast({ message: `index:${i}\nname: ${newSongs[0].name}\nisFavor:${newSongs[0].isFavor}` })
                                 }
                               })
                           }
@@ -261,20 +268,35 @@ export default struct Content {
                           .height(60)
                           .onClick(async () => {
                             this.providerFeature?.setPlayList(this.songs)
-                            if (this.currentPlaySong == undefined) {
+                            // 暂停 播放， 切歌
+                            this.providerFeature?.playOrPauseOrChange(song)
+                            console.log('logData', 'playOrPauseOrChange')
+                            /*if (this.currentPlaySong == undefined) {
                               this.currentPlaySong = song
                               await this.providerFeature?.play(song)
                             } else {
+                              // 如果切歌
                               if (!(this.currentPlaySong.id == song.id)) {
                                 this.currentPlaySong = song
                                 this.isPlaying = false
                                 await this.providerFeature?.changeSong(song)
+                              }else{
+                                // 如果切换播放状态
+                                if(this.isPlaying){
+                                  this.isPlaying =  false
+                                  this.providerFeature?.pause();
+                                }else {
+                                  this.isPlaying =  true
+                                  this.providerFeature?.play(this.currentPlaySong);
+                                }
                               }
-                            }
+                            }*/
+                            // ------------
                           })
                         })
                       }
-                      .width(i == (this.showSongs.length - 1) ? '100%' : '90%')
+                      // .width(i == (this.showSongs.length - 1) ? '100%' : '90%')
+                      .width('100%')
                       .padding({ left: '5%' })
                       .alignItems(HorizontalAlign.Start)
                     }
@@ -286,7 +308,7 @@ export default struct Content {
                 .scrollBar(BarState.Off)
                 .onTouch((event) => {
                   if (event.type == TouchType.Down) {
-                    // 处理 down 事件
+                    // 处理 down 事件  ---- 不理解
                     this.lastX = event.touches[0].x
                   } else if (event.type == TouchType.Cancel || event.type == TouchType.Up) {
                     const xOffset = event.touches[0].x - this.lastX
@@ -302,12 +324,14 @@ export default struct Content {
                       this.listScroller.scrollToIndex(this.listIndex, true)
                     }
                   }
+                  // ------------
                 })
               }
               .width('100%') // 180
               .height(this.showLocalList? '95%' : 0) // 180
               .visibility(this.showLocalList? Visibility.Visible: Visibility.None) // -----
               .alignItems(HorizontalAlign.Start)
+
               // 歌单
               Column({ space: 10 }) {
                 Text('我的歌单')
@@ -329,6 +353,7 @@ export default struct Content {
                     })
                     Text('我喜欢')
                   }
+                  // 添加歌单
                   Column() {
                     Image($r('app.media.ic_public_add'))
                       .width(36)
@@ -342,7 +367,7 @@ export default struct Content {
                   .borderColor($r('app.color.grey'))
                   .borderStyle(BorderStyle.Dashed)
                   .onClick(() => {
-
+                    // TODO: 添加歌单
                   })
                 }
                 .width('100%')
@@ -377,8 +402,8 @@ export default struct Content {
     .height('91%')
     .justifyContent(FlexAlign.Center)
     .onClick(() => {
-      if (this.songs.length == 0) {
-        const documentSelectOptions = FileUtil.getDocumentSelectOptions(context, defalutFilePathUri, fileSuffixFilters)
+      if (this.songs.length === 0) {
+        const documentSelectOptions = FileUtil.getDocumentSelectOptions(context, defaultFilePathUri, fileSuffixFilters)
         const documentViewPicker = new picker.DocumentViewPicker(context);
         documentViewPicker.select(documentSelectOptions).then((documentSelectResult: Array<string>) => {
           //文件选择成功后，返回被选中文档的uri结果集。

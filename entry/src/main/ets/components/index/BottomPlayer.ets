@@ -18,7 +18,7 @@ export default struct BottomPlayer {
 
   @State currentPlayIndex: number = -1
   @Watch('playing')@StorageLink('IsPlaying') isPlaying: boolean = false
-  @Watch('closeDetailPlayer') @State showDetail: boolean = false
+  @Watch('closeDetailPlayer') @Link showDetail: boolean
   @State showDetailImage: boolean = false
   @State detailBackgroundColor: string = ''
   @Watch('changeAngle') @State angle: number = 0
@@ -76,7 +76,6 @@ export default struct BottomPlayer {
     }
   }
 
-
   build() {
     Column() {
       Column() {
@@ -106,7 +105,6 @@ export default struct BottomPlayer {
       })
       Row() {
         Swiper() {
-
           ForEach(this.currentPlayList, (song: Song, index) => {
             Row() {
                 if (!this.showDetail) {
@@ -199,7 +197,8 @@ export default struct BottomPlayer {
       .width('100%')
       .height('6%')
 
-      DetailPlayer({ showDetail: this.showDetail, showDetailImage: this.showDetailImage, detailBackgroundColor: this.detailBackgroundColor, angle: this.angle })
+      DetailPlayer({ showDetail: this.showDetail, showDetailImage: this.showDetailImage,
+        detailBackgroundColor: this.detailBackgroundColor, angle: this.angle, showPlayList:this.showPlayList })
     }
     .width('100%')
     .alignItems(HorizontalAlign.Center)

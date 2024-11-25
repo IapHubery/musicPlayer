@@ -48,7 +48,7 @@ export class Song {
   }
 
   toAvQueueItem() {
-    const avMediaDecription: avSession.AVMediaDescription = {
+    const avMediaDescription: avSession.AVMediaDescription = {
       assetId: this.id,
       title: this.name,
       subtitle: this.singerName,
@@ -60,7 +60,7 @@ export class Song {
     }
     const avQueueItem: avSession.AVQueueItem = {
       itemId: 0,
-      description: avMediaDecription
+      description: avMediaDescription
     }
     return avQueueItem
   }

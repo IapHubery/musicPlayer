@@ -42,8 +42,6 @@ export default struct PlayList {
     }
   }
 
-
-
   build() {
     Column() {
       Row() {
@@ -66,6 +64,7 @@ export default struct PlayList {
                   .fontColor(this.currentIndex == index ? Color.Green : Color.Black)
               }
               .width('75%')
+              // 移除出播放列表
               Row() {
                 Image($r('app.media.ic_public_cancel'))
                   .width(16)
@@ -76,8 +75,10 @@ export default struct PlayList {
                     this.deleteIndex = index
                   })
                 Blank()
+                // TODO: 拖拽歌曲位置 动画
                 Image($r('app.media.ic_public_drag_handle'))
                   .width(16)
+
               }
               .width('15%')
             }

@@ -1,5 +1,5 @@
 import { media } from '@kit.MediaKit';
-import { fileIo } from '@kit.CoreFileKit';
+import { fileIo as fs } from '@kit.CoreFileKit';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import File from '@system.file';
@@ -117,7 +117,7 @@ export class MediaPlayer {
   }
 
   async loadFromFile(path: string) {
-    let file = fileIo.openSync(path)
+    let file = fs.openSync(path)
     this.fd = file.fd
     let src: media.AVDataSrcDescriptor = {
       fileSize: -1,
@@ -126,14 +126,14 @@ export class MediaPlayer {
         if (buf == undefined || length == undefined || pos == undefined) {
           return -1;
         }
-        num = fileIo.readSync(this.fd, buf, { offset: pos, length: length });
+        num = fs.readSync(this.fd, buf, { offset: pos, length: length });
         if (num > 0 && (this.fileSize >= pos)) {
           return num;
         }
         return -1;
       }
     }
-    this.fileSize = fileIo.statSync(path).size
+    this.fileSize = fs.statSync(path).size
     src.fileSize = this.fileSize
     if (this.avPlayer) {
       this.avPlayer.dataSrc = src;

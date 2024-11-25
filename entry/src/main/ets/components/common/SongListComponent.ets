@@ -79,7 +79,7 @@ export default struct SongListComponent {
           .height(60)
           .onClick(async () => {
             this.providerFeature?.setPlayList(this.songs)
-            this.providerFeature?.playOrChange(song)
+            this.providerFeature?.playOrPauseOrChange(song)
             if (this.songList) {
               this.playListTitle = this.songList.name
             }

@@ -9,7 +9,7 @@ import SongSqlUtil from '../common/utils/sql/SongSqlUtil'
 
 @Builder
 export function SingerPageBuilder(name: string, param: object) {
-  SingerPage({ singer: param as Singer})
+  SingerPage({ singer: param as Singer })
 }
 
 @Entry
@@ -22,7 +22,6 @@ struct SingerPage {
   @State songs: Song[] = []
   @State pageBackgroundColor: string | Color = ''
   @State themeColor: Resource = $r('app.color.white')
-  @State showPlayList: boolean = false
   private providerFeature?: ProviderFeature
   async aboutToAppear() {
     this.providerFeature = await ProviderFeature.getInstance()
@@ -38,6 +37,8 @@ struct SingerPage {
       effectKit.createColorPicker(pixelMap, (err, colorPicker) => {
         this.pageBackgroundColor = this.handleColor(colorPicker.getLargestProportionColor())
       })
+    }else{
+      this.pageBackgroundColor = Constants.DEFAULT_SONG_BACKGROUND
     }
   }
 
@@ -69,7 +70,7 @@ struct SingerPage {
               .backgroundColor(Color.Red)
               .onClick(() => {
                 this.providerFeature?.setPlayList(this.songs)
-                this.providerFeature?.playOrChange(this.songs[0])
+                this.providerFeature?.playOrPauseOrChange(this.songs[0])
               })
               Text('播放全部')
             }

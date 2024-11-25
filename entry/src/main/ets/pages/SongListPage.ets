@@ -14,8 +14,8 @@ import SongSqlUtil from '../common/utils/sql/SongSqlUtil'
 import SongListComponent from '../components/common/SongListComponent'
 
 @Builder
-export function SongListPageBuilder(name: string, param: object) {
-  SongListPage({ songList: param as SongList })
+export function SongListPageBuilder(name: string, songList: object) {
+  SongListPage({ songList: songList as SongList })
 }
 
 @Entry
@@ -29,11 +29,12 @@ struct SongListPage {
   @State songs: Song[] = []
   @State pageBackgroundColor: string | Color = ''
   @State themeColor: Resource = $r('app.color.white')
-  @State showPlayList: boolean = false
+
   private providerFeature?: ProviderFeature
   async aboutToAppear() {
+
     this.providerFeature = await ProviderFeature.getInstance()
-    this.songs = SongSqlUtil.queryBySongList(this.songList.id, [0, 50])
+    this.songs = SongSqlUtil.queryBySongList(this.songList.id)
     if (this.songList.id == '0') {
       this.pageBackgroundColor = Color.Pink
     } else
@@ -48,6 +49,8 @@ struct SongListPage {
       effectKit.createColorPicker(pixelMap, (err, colorPicker) => {
         this.pageBackgroundColor = this.handleColor(colorPicker.getAverageColor())
       })
+    }else{
+      this.pageBackgroundColor = Constants.DEFAULT_SONG_BACKGROUND
     }
   }
 
@@ -60,6 +63,7 @@ struct SongListPage {
       Column() {
         Scroll() {
           Column() {
+            // 歌单 若为收藏歌单，显示收藏图片，反之，则为第一首歌 专辑图片
             Row() {
               if (this.songList.id == '0')
                 Image($r('app.media.ic_public_favor_filled'))
@@ -73,6 +77,8 @@ struct SongListPage {
             .height(ScreenInfo.WIDTH)
             .justifyContent(FlexAlign.Center)
             .backgroundColor(this.songList.id == '0' ? Color.Pink : '')
+
+            // 播放全部按钮
             Row({ space: 5 }) {
               Column() {
                 Image($r('app.media.ic_public_play'))
@@ -86,7 +92,7 @@ struct SongListPage {
               .backgroundColor(Color.Red)
               .onClick(() => {
                 this.providerFeature?.setPlayList(this.songs)
-                this.providerFeature?.playOrChange(this.songs[0])
+                this.providerFeature?.playOrPauseOrChange(this.songs[0])
                 if (this.songList) {
                   this.playListTitle = this.songList.name
                 } else
@@ -99,6 +105,7 @@ struct SongListPage {
             .padding({ left: 10 })
             .backgroundColor(Color.White)
             .borderRadius({ topLeft: 15, topRight: 15 })
+            // 歌曲列表
             SongListComponent({ songs: this.songs, songList: this.songList })
           }
           .width('100%')

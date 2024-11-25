@@ -8,24 +8,19 @@ import Logger from '../../common/utils/Logger'
 import { image } from '@kit.ImageKit'
 import { effectKit } from '@kit.ArkGraphics2D'
 import PlayList from './PlayList'
+import Constants from '../../common/constants/Constants'
 
 @Component
 export default struct DetailPlayer {
-
-  @Watch('init')@Link showDetail: boolean
+  @Watch('init') @Link showDetail: boolean
   @Prop detailBackgroundColor: string
-
-  @Watch('changeSong')@StorageProp('CurrentPlaySong') currentPlaySong: Song = Song.getEmpty()
-
+  @Watch('changeSong') @StorageProp('CurrentPlaySong') currentPlaySong: Song = Song.getEmpty()
   @StorageProp('PlayMode') playMode: string = MyPlayMode.LIST_CYCLE
-
   @StorageProp('IsPlaying') isPlaying: boolean = false
-
   // @Watch('changeLyric')@StorageProp('Lyric') lyric: string = ''
 
   @StorageProp('LyricList') lyricList: Array<Lyric> = []
-
-  @Watch('changeProgress')@StorageProp('CurrentProgress') currentProgress: number = 0
+  @Watch('changeProgress') @StorageProp('CurrentProgress') currentProgress: number = 0
   @State duration: number = this.currentPlaySong.duration
   @State progress: number = this.currentProgress
   @State blockSize: number = 6
@@ -34,7 +29,7 @@ export default struct DetailPlayer {
   @State progressStr: string = ''
   // 当前是第几句
   @State lyricIndex: number = 0
-  @State showPlayList: boolean = false
+  @Link showPlayList: boolean
   @Link angle: number
   @Link showDetailImage: boolean
 
@@ -69,8 +64,9 @@ export default struct DetailPlayer {
 
   changeSong() {
     if (this.currentPlaySong?.duration) {
-      if (this.currentPlaySong.duration != 0)
+      if (this.currentPlaySong.duration != 0) {
         this.duration = this.currentPlaySong.duration
+      }
       this.durationStr = this.handleSeconds(Math.floor(this.currentPlaySong?.duration / 1000))
     }
     this.handleWords()
@@ -95,13 +91,19 @@ export default struct DetailPlayer {
     }
   }
 
+  // 无歌词图片，则使用默认背景颜色
   private async changeBackgroundColor() {
-    const imageSource = image.createImageSource(this.currentPlaySong?.coverPath);
-    const pixelMap: image.PixelMap = await imageSource.createPixelMap()
+    if (this.currentPlaySong.coverPath) {
+      const imageSource = image.createImageSource(this.currentPlaySong?.coverPath);
+      const pixelMap: image.PixelMap = await imageSource.createPixelMap()
 
-    effectKit.createColorPicker(pixelMap, (err, colorPicker) => {
-      this.detailBackgroundColor = this.handleColor(colorPicker.getAverageColor())
-    })
+      effectKit.createColorPicker(pixelMap, (err, colorPicker) => {
+        this.detailBackgroundColor = this.handleColor(colorPicker.getAverageColor())
+      })
+    } else {
+      // 无歌词图片，则使用默认背景颜色
+      this.detailBackgroundColor = Constants.DEFAULT_SONG_BACKGROUND
+    }
   }
 
   private handleColor(color: effectKit.Color) {
@@ -111,7 +113,6 @@ export default struct DetailPlayer {
   scroller: Scroller = new Scroller()
 
   build() {
-
     Column() {
       // 返回
       Row() {
@@ -129,8 +130,7 @@ export default struct DetailPlayer {
       // 唱片图
       Image(this.currentPlaySong?.coverUri ? this.currentPlaySong?.coverUri : $r('app.media.first'))
         .width(300)
-        .height(300)
-        // .justifyContent(FlexAlign.Center)
+        .height(300)// .justifyContent(FlexAlign.Center)
         .borderRadius(150)
         .visibility(!this.showDetailImage ? Visibility.Visible : Visibility.Hidden)
         .rotate({
@@ -144,27 +144,35 @@ export default struct DetailPlayer {
       Row()
         .width('100%')
         .height('5%')
+      // 播放歌词
       List({ scroller: this.scroller }) {
         ListItem() {
-          Row()
-            .width('100%')
-            .height('33%')
+          Row(){
+            Blank()
+          }
         }
+
         ForEach(this.lyricList, (lyric: Lyric, index) => {
           ListItem() {
             Row() {
               Text(lyric.words)
                 .fontColor(this.lyricIndex == index ? Color.White : $r('app.color.unselect_lyric'))
                 .fontSize(this.lyricIndex == index ? 20 : 16)
+                .visibility(this.lyricList.length ? Visibility.Visible : Visibility.None)
+
+              Text('该歌曲暂无歌词')
+                .visibility(this.lyricList.length? Visibility.None: Visibility.Visible)
+                .textAlign(TextAlign.Center)
             }
             .width('100%')
             .height('33%')
           }
         })
+
         ListItem() {
-          Row()
-            .width('100%')
-            .height('33%')
+          Row(){
+            Blank()
+          }
         }
       }
       .width('90%')
@@ -172,6 +180,9 @@ export default struct DetailPlayer {
       .alignListItem(ListItemAlign.Center)
       .enableScrollInteraction(false)
       .scrollBar(BarState.Off)
+      // .border({ width:1, color:Color.Red})
+
+      // 播放进度条
       Row() {
         Slider({
           value: this.progress,
@@ -194,6 +205,8 @@ export default struct DetailPlayer {
           })
       }
       .width('90%')
+
+      // 播放进度条 两端时间
       Row() {
         Column() {
           Text(this.progressStr)
@@ -202,6 +215,7 @@ export default struct DetailPlayer {
         }
         .width('50%')
         .alignItems(HorizontalAlign.Start)
+
         Column() {
           Text(this.durationStr)
             .fontSize(12)
@@ -212,8 +226,10 @@ export default struct DetailPlayer {
       }
       .width('90%')
 
+      // 播放控制器
       Row() {
         Grid() {
+          // 播放模式图标----待优化
           GridItem() {
             Image(this.playMode == MyPlayMode.LIST_CYCLE ? $r('app.media.ic_public_list_cycle') :
               this.playMode == MyPlayMode.SINGLE_CYCLE ? $r('app.media.ic_public_single_cycle') :
@@ -225,6 +241,8 @@ export default struct DetailPlayer {
               })
           }
           .height('100%')
+
+          // 上一首图标
           GridItem() {
             Image($r('app.media.ic_public_play_last'))
               .width(40)
@@ -235,14 +253,17 @@ export default struct DetailPlayer {
               })
           }
           .height('100%')
+
+          // 播放状态图标
           GridItem() {
             Image(this.isPlaying ? $r('app.media.ic_public_pause') : $r('app.media.ic_public_play'))
               .width(48)
               .fillColor(Color.White)
               .onClick(async () => {
                 if (!this.isPlaying) {
-                  if (this.currentPlaySong)
+                  if (this.currentPlaySong) {
                     this.providerFeature?.play(this.currentPlaySong)
+                  }
                 } else {
                   this.providerFeature?.pause();
                 }
@@ -250,6 +271,7 @@ export default struct DetailPlayer {
           }
           .height('100%')
 
+          // 下一首图标
           GridItem() {
             Image($r('app.media.ic_public_play_next'))
               .width(40)
@@ -261,6 +283,7 @@ export default struct DetailPlayer {
           }
           .height('100%')
 
+          // 播放列表图标
           GridItem() {
             Image($r('app.media.ic_public_view_list'))
               .width(32)
@@ -273,7 +296,6 @@ export default struct DetailPlayer {
         }
         .height('15%')
         .columnsTemplate('1fr 1fr 1fr 1fr 1fr')
-
       }
       Cover({ isShow: this.showPlayList })
       PlayList({ showPlayList: this.showPlayList })

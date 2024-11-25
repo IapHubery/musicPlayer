@@ -24,24 +24,37 @@ struct Index {
 
   @StorageLink('CurrentPlaySong') currentPlaySong: Song | undefined = undefined
 
-  @State showPlayList: boolean = false
   private providerFeature?: ProviderFeature
 
+  @State showPlayList: boolean = false
+  @State showDetail:boolean = false
   @State showLocalList:boolean = false
+  @State isLocalListEnter:boolean = false
 
   async aboutToAppear() {
     this.providerFeature = await ProviderFeature.getInstance()
   }
 
   onBackPress(): boolean | void {
-    if (this.showPlayList) {
-      // 如果不显示播放列表，则阻断返回，防止直接退出应用
+    // 播放列表   阻断返回，防止直接退出应用
+    if (this.showPlayList === true ) {
       this.showPlayList = false
+      console.log('logData', 'showPlayList 执行')
       return true
     }
+
+    // 歌曲播放界面  this.showPlayList === false
+    if (this.showDetail === true  ){
+      this.showDetail = false
+      console.log('logData', 'showDetail 执行')
+      return true
+    }
+
+    // 本地歌曲列表
     if (this.showLocalList === true){
       this.showLocalList = false
-      // 如果不显示本地歌曲列表，则阻断返回，防止直接退出应用
+      this.isLocalListEnter = false
+      console.log('logData', 'showLocalList 执行')
       return true
     }
   }
@@ -52,7 +65,8 @@ struct Index {
         Navigation(this.pathStack) {
           Column() {
             Header({ refreshData: this.refreshData, showSidebar: this.showSidebar })
-            Content({ refreshData: this.refreshData, pathStack: this.pathStack, showLocalList: this.showLocalList})
+            Content({ refreshData: this.refreshData, pathStack: this.pathStack,
+              showLocalList: this.showLocalList, isLocalListEnter: this.isLocalListEnter})
           }
         }
         .height('90%')
@@ -60,11 +74,13 @@ struct Index {
         .hideTitleBar(true)
         // 首页 底部播放器
         if (this.currentPlaySong) {
-          BottomPlayer({ showPlayList: this.showPlayList })
+          BottomPlayer({ showPlayList: this.showPlayList, showDetail:this.showDetail })
           Cover({ isShow: this.showPlayList })
+          // 播放列表
           PlayList({ showPlayList: this.showPlayList })
         }
         Cover({ isShow: this.showSidebar })
+        // 左上角侧边栏
         Sidebar({ showSidebar: this.showSidebar })
       }
       .justifyContent(FlexAlign.Center)

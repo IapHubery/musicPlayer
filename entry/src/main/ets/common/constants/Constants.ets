@@ -9,6 +9,8 @@ export default class Constants {
   static readonly DEFAULT_SINGER_COVER = 'app.media.first'
   // 默认歌曲封面
   static readonly DEFAULT_SONG_COVER = 'app.media.first'
+  // 默认播放页面 背景颜色
+  static readonly DEFAULT_SONG_BACKGROUND = '#8d8693'
 
   static readonly DEFAULT_FILE_PATH_URI = 'file://docs/storage/Users/currentUser/Download'
 }

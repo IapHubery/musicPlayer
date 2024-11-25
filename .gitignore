@@ -1,0 +1,13 @@
+/oh_modules
+/.idea
+/.hvigor
+.cxx
+/.clangd
+/.clang-format
+/.clang-tidy
+/.appanalyzer
+
+/user
+**/build
+**/.preview
+**/oh_modules
